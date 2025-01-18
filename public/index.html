@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ws</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Menlo", "Monaco", monospace;
+      }
+
+      body {
+        max-width: 720px;
+        margin: 40px auto;
+        padding: 20px;
+        background: white;
+        color: #000;
+      }
+
+      h1 {
+        font-size: 1.2rem;
+        font-weight: 400;
+        margin-bottom: 24px;
+        letter-spacing: 2px;
+        text-transform: lowercase;
+      }
+
+      #messages {
+        height: 70vh;
+        overflow-y: auto;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      #messages div {
+        padding: 8px 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .sent {
+        color: #000;
+      }
+
+      .received {
+        color: #666;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+      }
+
+      #messageInput {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #eee;
+        font-family: inherit;
+        font-size: 0.9rem;
+      }
+
+      #messageInput:focus {
+        outline: none;
+        border-color: #000;
+      }
+
+      #sendButton {
+        padding: 8px 16px;
+        background: #000;
+        color: white;
+        border: none;
+        font-family: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+
+      /* Scrollbar */
+      #messages::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      #messages::-webkit-scrollbar-thumb {
+        background: #eee;
+      }
+
+      /* Message animation */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      #messages div {
+        animation: fadeIn 0.2s ease-out;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>ws://local</h1>
+    <div id="messages"></div>
+    <div class="input-group">
+      <input type="text" id="messageInput" placeholder="message" />
+      <button id="sendButton">send</button>
+    </div>
+
+    <script>
+      const ws = new WebSocket("ws://localhost:8080/ws");
+      const messagesDiv = document.getElementById("messages");
+      const messageInput = document.getElementById("messageInput");
+      const sendButton = document.getElementById("sendButton");
+
+      function displayMessage(message, type) {
+        const messageElement = document.createElement("div");
+        messageElement.textContent = message;
+        messageElement.className = type;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      ws.onopen = () => {
+        displayMessage("connected", "received");
+      };
+
+      ws.onmessage = (event) => {
+        displayMessage(`> ${event.data}`, "received");
+      };
+
+      ws.onclose = () => {
+        displayMessage("disconnected", "received");
+      };
+
+      ws.onerror = (error) => {
+        displayMessage(`error: ${JSON.stringify(error)}`, "received");
+      };
+
+      sendButton.addEventListener("click", () => {
+        const message = messageInput.value;
+        if (message && ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+          displayMessage(`$ ${message}`, "sent");
+          messageInput.value = "";
+        }
+      });
+
+      messageInput.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          sendButton.click();
+        }
+      });
+    </script>
+  </body>
+</html>
